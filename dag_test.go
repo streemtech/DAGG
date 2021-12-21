@@ -20,8 +20,8 @@ func TestAcyclicGraphRoot(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(3), myint(2)))
-	g.Connect(BasicEdge[myint](myint(3), myint(1)))
+	g.Connect(BasicEdge(myint(3), myint(2)))
+	g.Connect(BasicEdge(myint(3), myint(1)))
 
 	if root, err := g.Root(); err != nil {
 		t.Fatalf("err: %s", err)
@@ -35,9 +35,9 @@ func TestAcyclicGraphRoot_cycle(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(1), myint(2)))
-	g.Connect(BasicEdge[myint](myint(2), myint(3)))
-	g.Connect(BasicEdge[myint](myint(3), myint(1)))
+	g.Connect(BasicEdge(myint(1), myint(2)))
+	g.Connect(BasicEdge(myint(2), myint(3)))
+	g.Connect(BasicEdge(myint(3), myint(1)))
 
 	if _, err := g.Root(); err == nil {
 		t.Fatal("should error")
@@ -49,7 +49,7 @@ func TestAcyclicGraphRoot_multiple(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(3), myint(2)))
+	g.Connect(BasicEdge(myint(3), myint(2)))
 
 	if _, err := g.Root(); err == nil {
 		t.Fatal("should error")
@@ -61,9 +61,9 @@ func TestAcyclicGraphTransReduction(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(1), myint(2)))
-	g.Connect(BasicEdge[myint](myint(1), myint(3)))
-	g.Connect(BasicEdge[myint](myint(2), myint(3)))
+	g.Connect(BasicEdge(myint(1), myint(2)))
+	g.Connect(BasicEdge(myint(1), myint(3)))
+	g.Connect(BasicEdge(myint(2), myint(3)))
 	g.TransitiveReduction()
 
 	actual := strings.TrimSpace(g.String())
@@ -79,12 +79,12 @@ func TestAcyclicGraphTransReduction_more(t *testing.T) {
 	g.Add(myint(2))
 	g.Add(myint(3))
 	g.Add(myint(4))
-	g.Connect(BasicEdge[myint](myint(1), myint(2)))
-	g.Connect(BasicEdge[myint](myint(1), myint(3)))
-	g.Connect(BasicEdge[myint](myint(1), myint(4)))
-	g.Connect(BasicEdge[myint](myint(2), myint(3)))
-	g.Connect(BasicEdge[myint](myint(2), myint(4)))
-	g.Connect(BasicEdge[myint](myint(3), myint(4)))
+	g.Connect(BasicEdge(myint(1), myint(2)))
+	g.Connect(BasicEdge(myint(1), myint(3)))
+	g.Connect(BasicEdge(myint(1), myint(4)))
+	g.Connect(BasicEdge(myint(2), myint(3)))
+	g.Connect(BasicEdge(myint(2), myint(4)))
+	g.Connect(BasicEdge(myint(3), myint(4)))
 	g.TransitiveReduction()
 
 	actual := strings.TrimSpace(g.String())
@@ -130,7 +130,7 @@ func TestAcyclicGraphTransReduction_fullyConnected(t *testing.T) {
 			if i == j {
 				continue
 			}
-			g.Connect(BasicEdge[*counter](nodes[i], nodes[j]))
+			g.Connect(BasicEdge(nodes[i], nodes[j]))
 		}
 	}
 
@@ -158,8 +158,8 @@ func TestAcyclicGraphValidate(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(3), myint(2)))
-	g.Connect(BasicEdge[myint](myint(3), myint(1)))
+	g.Connect(BasicEdge(myint(3), myint(2)))
+	g.Connect(BasicEdge(myint(3), myint(1)))
 
 	if err := g.Validate(); err != nil {
 		t.Fatalf("err: %s", err)
@@ -171,10 +171,10 @@ func TestAcyclicGraphValidate_cycle(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(3), myint(2)))
-	g.Connect(BasicEdge[myint](myint(3), myint(1)))
-	g.Connect(BasicEdge[myint](myint(1), myint(2)))
-	g.Connect(BasicEdge[myint](myint(2), myint(1)))
+	g.Connect(BasicEdge(myint(3), myint(2)))
+	g.Connect(BasicEdge(myint(3), myint(1)))
+	g.Connect(BasicEdge(myint(1), myint(2)))
+	g.Connect(BasicEdge(myint(2), myint(1)))
 
 	if err := g.Validate(); err == nil {
 		t.Fatal("should error")
@@ -185,7 +185,7 @@ func TestAcyclicGraphValidate_cycleSelf(t *testing.T) {
 	var g AcyclicGraph[myint]
 	g.Add(myint(1))
 	g.Add(myint(2))
-	g.Connect(BasicEdge[myint](myint(1), myint(1)))
+	g.Connect(BasicEdge(myint(1), myint(1)))
 
 	if err := g.Validate(); err == nil {
 		t.Fatal("should error")
@@ -199,11 +199,11 @@ func TestAcyclicGraphAncestors(t *testing.T) {
 	g.Add(myint(3))
 	g.Add(myint(4))
 	g.Add(myint(5))
-	g.Connect(BasicEdge[myint](myint(0), myint(1)))
-	g.Connect(BasicEdge[myint](myint(1), myint(2)))
-	g.Connect(BasicEdge[myint](myint(2), myint(3)))
-	g.Connect(BasicEdge[myint](myint(3), myint(4)))
-	g.Connect(BasicEdge[myint](myint(4), myint(5)))
+	g.Connect(BasicEdge(myint(0), myint(1)))
+	g.Connect(BasicEdge(myint(1), myint(2)))
+	g.Connect(BasicEdge(myint(2), myint(3)))
+	g.Connect(BasicEdge(myint(3), myint(4)))
+	g.Connect(BasicEdge(myint(4), myint(5)))
 
 	actual, err := g.Ancestors(myint(2))
 	if err != nil {
@@ -230,11 +230,11 @@ func TestAcyclicGraphDescendents(t *testing.T) {
 	g.Add(myint(3))
 	g.Add(myint(4))
 	g.Add(myint(5))
-	g.Connect(BasicEdge[myint](myint(0), myint(1)))
-	g.Connect(BasicEdge[myint](myint(1), myint(2)))
-	g.Connect(BasicEdge[myint](myint(2), myint(3)))
-	g.Connect(BasicEdge[myint](myint(3), myint(4)))
-	g.Connect(BasicEdge[myint](myint(4), myint(5)))
+	g.Connect(BasicEdge(myint(0), myint(1)))
+	g.Connect(BasicEdge(myint(1), myint(2)))
+	g.Connect(BasicEdge(myint(2), myint(3)))
+	g.Connect(BasicEdge(myint(3), myint(4)))
+	g.Connect(BasicEdge(myint(4), myint(5)))
 
 	actual, err := g.Descendents(myint(2))
 	if err != nil {
@@ -259,8 +259,8 @@ func TestAcyclicGraphDescendents(t *testing.T) {
 // 	g.Add(myint(1))
 // 	g.Add(myint(2))
 // 	g.Add(myint(3))
-// 	g.Connect(BasicEdge[myint](myint(3), myint(2)))
-// 	g.Connect(BasicEdge[myint](myint(3), myint(1)))
+// 	g.Connect(BasicEdge(myint(3), myint(2)))
+// 	g.Connect(BasicEdge(myint(3), myint(1)))
 
 // 	var visits []Vertex[myint]
 // 	var lock sync.Mutex
@@ -291,9 +291,9 @@ func TestAcyclicGraphDescendents(t *testing.T) {
 // 	g.Add(myint(2))
 // 	g.Add(myint(3))
 // 	g.Add(myint(4))
-// 	g.Connect(BasicEdge[myint](myint(4), myint(3)))
-// 	g.Connect(BasicEdge[myint](myint(3), myint(2)))
-// 	g.Connect(BasicEdge[myint](myint(2), myint(1)))
+// 	g.Connect(BasicEdge(myint(4), myint(3)))
+// 	g.Connect(BasicEdge(myint(3), myint(2)))
+// 	g.Connect(BasicEdge(myint(2), myint(1)))
 
 // 	var visits []Vertex[myint]
 // 	var lock sync.Mutex
@@ -384,8 +384,8 @@ func TestAcyclicGraph_ReverseDepthFirstWalk_WithRemoval(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(3), myint(2)))
-	g.Connect(BasicEdge[myint](myint(2), myint(1)))
+	g.Connect(BasicEdge(myint(3), myint(2)))
+	g.Connect(BasicEdge(myint(2), myint(1)))
 
 	var visits []myint
 	var lock sync.Mutex

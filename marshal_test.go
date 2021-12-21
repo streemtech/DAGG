@@ -23,7 +23,7 @@ func TestGraphDot_basic(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(1), myint(3)))
+	g.Connect(BasicEdge(myint(1), myint(3)))
 
 	actual := strings.TrimSpace(string(g.Dot(nil)))
 	expected := strings.TrimSpace(testGraphDotBasicStr)
@@ -43,7 +43,7 @@ func TestGraphDot_quoted(t *testing.T) {
 	other := mystr(`other`)
 	g.Add(quoted)
 	g.Add(other)
-	g.Connect(BasicEdge[mystr](quoted, other))
+	g.Connect(BasicEdge(quoted, other))
 
 	actual := strings.TrimSpace(string(g.Dot(nil)))
 	expected := strings.TrimSpace(testGraphDotQuotedStr)

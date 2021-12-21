@@ -5,8 +5,8 @@ import (
 )
 
 func TestBasicEdgeHashcode(t *testing.T) {
-	e1 := BasicEdge[myint](myint(1), myint(2))
-	e2 := BasicEdge[myint](myint(1), myint(2))
+	e1 := BasicEdge(myint(1), myint(2))
+	e2 := BasicEdge(myint(1), myint(2))
 	if e1.Hashcode() != e2.Hashcode() {
 		t.Fatalf("bad")
 	}

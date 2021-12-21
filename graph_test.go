@@ -31,7 +31,7 @@ func TestGraph_basic(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(1), myint(3)))
+	g.Connect(BasicEdge(myint(1), myint(3)))
 
 	actual := strings.TrimSpace(g.String())
 	expected := strings.TrimSpace(testGraphBasicStr)
@@ -45,7 +45,7 @@ func TestGraph_remove(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(1), myint(3)))
+	g.Connect(BasicEdge(myint(1), myint(3)))
 	g.Remove(myint(3))
 
 	actual := strings.TrimSpace(g.String())
@@ -60,8 +60,8 @@ func TestGraph_replace(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(1), myint(2)))
-	g.Connect(BasicEdge[myint](myint(2), myint(3)))
+	g.Connect(BasicEdge(myint(1), myint(2)))
+	g.Connect(BasicEdge(myint(2), myint(3)))
 	g.Replace(myint(2), myint(42))
 
 	actual := strings.TrimSpace(g.String())
@@ -76,8 +76,8 @@ func TestGraph_replaceSelf(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(1), myint(2)))
-	g.Connect(BasicEdge[myint](myint(2), myint(3)))
+	g.Connect(BasicEdge(myint(1), myint(2)))
+	g.Connect(BasicEdge(myint(2), myint(3)))
 	g.Replace(myint(2), myint(2))
 
 	actual := strings.TrimSpace(g.String())
@@ -94,7 +94,7 @@ func TestGraph_hashcode(t *testing.T) {
 	g.Add(&hashVertex{code: 1})
 	g.Add(&hashVertex{code: 2})
 	g.Add(&hashVertex{code: 3})
-	g.Connect(BasicEdge[*hashVertex](
+	g.Connect(BasicEdge(
 		&hashVertex{code: 1},
 		&hashVertex{code: 3}))
 
@@ -121,12 +121,12 @@ func TestGraphHasEdge(t *testing.T) {
 	var g Graph[myint]
 	g.Add(myint(1))
 	g.Add(myint(2))
-	g.Connect(BasicEdge[myint](myint(1), myint(2)))
+	g.Connect(BasicEdge(myint(1), myint(2)))
 
-	if !g.HasEdge(BasicEdge[myint](myint(1), myint(2))) {
+	if !g.HasEdge(BasicEdge(myint(1), myint(2))) {
 		t.Fatal("should have 1,2")
 	}
-	if g.HasEdge(BasicEdge[myint](myint(2), myint(3))) {
+	if g.HasEdge(BasicEdge(myint(2), myint(3))) {
 		t.Fatal("should not have 2,3")
 	}
 }
@@ -136,13 +136,13 @@ func TestGraphEdgesFrom(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(1), myint(3)))
-	g.Connect(BasicEdge[myint](myint(2), myint(3)))
+	g.Connect(BasicEdge(myint(1), myint(3)))
+	g.Connect(BasicEdge(myint(2), myint(3)))
 
 	edges := g.EdgesFrom(myint(1))
 
 	expected := make(Set[Edge[myint]])
-	expected.Add(BasicEdge[myint](myint(1), myint(3)))
+	expected.Add(BasicEdge(myint(1), myint(3)))
 
 	s := make(Set[Edge[myint]])
 	for _, e := range edges {
@@ -159,13 +159,13 @@ func TestGraphEdgesTo(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(1), myint(3)))
-	g.Connect(BasicEdge[myint](myint(1), myint(2)))
+	g.Connect(BasicEdge(myint(1), myint(3)))
+	g.Connect(BasicEdge(myint(1), myint(2)))
 
 	edges := g.EdgesTo(myint(3))
 
 	expected := make(Set[Edge[myint]])
-	expected.Add(BasicEdge[myint](myint(1), myint(3)))
+	expected.Add(BasicEdge(myint(1), myint(3)))
 
 	s := make(Set[Edge[myint]])
 	for _, e := range edges {
@@ -183,8 +183,8 @@ func TestGraphUpdownEdges(t *testing.T) {
 	g.Add(myint(1))
 	g.Add(myint(2))
 	g.Add(myint(3))
-	g.Connect(BasicEdge[myint](myint(1), myint(2)))
-	g.Connect(BasicEdge[myint](myint(2), myint(3)))
+	g.Connect(BasicEdge(myint(1), myint(2)))
+	g.Connect(BasicEdge(myint(2), myint(3)))
 
 	up := g.UpEdges(myint(2))
 	if up.Len() != 1 || !up.Include(myint(1)) {
