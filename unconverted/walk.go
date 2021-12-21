@@ -36,9 +36,9 @@ package dag
 // 	// should modify these fields. Modifying them outside of Update can cause
 // 	// serious problems.
 // 	changeLock sync.Mutex
-// 	vertices   Set[Vertex[T]]
+// 	vertices   Set[T]
 // 	edges      Set[Edge[T]]
-// 	vertexMap  map[Vertex[T]]*walkerVertex[T]
+// 	vertexMap  map[T]*walkerT
 
 // 	// wait is done when all vertices have executed. It may become "undone"
 // 	// if new vertices are added.
@@ -47,7 +47,7 @@ package dag
 
 // func (w *Walker[T]) init() {
 // 	if w.vertices == nil {
-// 		w.vertices = make(Set[Vertex[T]])
+// 		w.vertices = make(Set[T])
 // 	}
 // 	if w.edges == nil {
 // 		w.edges = make(Set[Edge[T]])
@@ -83,7 +83,7 @@ package dag
 // 	// Below is not safe to read/write in parallel. This behavior is
 // 	// enforced by changes only happening in Update. Nothing else should
 // 	// ever modify these.
-// 	deps         map[Vertex[T]]chan struct{}
+// 	deps         map[T]chan struct{}
 // 	depsCancelCh chan struct{}
 // }
 
@@ -113,7 +113,7 @@ package dag
 // // time during a walk.
 // func (w *Walker[T]) Update(g *AcyclicGraph[T]) {
 // 	w.init()
-// 	v := make(Set[Vertex[T]])
+// 	v := make(Set[T])
 // 	e := make(Set[Edge[T]])
 // 	if g != nil {
 // 		v, e = g.vertices, g.edges
@@ -127,7 +127,7 @@ package dag
 
 // 	// Initialize fields
 // 	if w.vertexMap == nil {
-// 		w.vertexMap = make(map[Vertex[T]]*walkerVertex[T])
+// 		w.vertexMap = make(map[T]*walkerT)
 // 	}
 
 // 	// Calculate all our sets
@@ -147,10 +147,10 @@ package dag
 // 		w.vertices.Add(raw)
 
 // 		// Initialize the vertex info
-// 		info := &walkerVertex[T]{
+// 		info := &walkerT{
 // 			DoneCh:   make(chan struct{}),
 // 			CancelCh: make(chan struct{}),
-// 			deps:     make(map[Vertex[T]]chan struct{}),
+// 			deps:     make(map[T]chan struct{}),
 // 		}
 
 // 		// Add it to the map and kick off the walk
@@ -178,7 +178,7 @@ package dag
 // 	}
 
 // 	// Add the new edges
-// 	changedDeps := make(Set[Vertex[T]])
+// 	changedDeps := make(Set[T])
 // 	for _, raw := range newEdges {
 // 		edge := raw
 // 		waiter, dep := w.edgeParts(edge)
@@ -242,7 +242,7 @@ package dag
 // 		cancelCh := make(chan struct{})
 
 // 		// Build a new deps copy
-// 		deps := make(map[Vertex[T]]<-chan struct{})
+// 		deps := make(map[T]<-chan struct{})
 // 		for k, v := range info.deps {
 // 			deps[k] = v
 // 		}
@@ -276,7 +276,7 @@ package dag
 
 // // edgeParts returns the waiter and the dependency, in that order.
 // // The waiter is waiting on the dependency.
-// func (w *Walker[T]) edgeParts(e Edge[T]) (Vertex[T], Vertex[T]) {
+// func (w *Walker[T]) edgeParts(e Edge[T]) (T, T) {
 // 	if w.Reverse {
 // 		return e.Source(), e.Target()
 // 	}
@@ -286,7 +286,7 @@ package dag
 
 // // walkVertex walks a single vertex, waiting for any dependencies before
 // // executing the callback.
-// func (w *Walker[T]) walkVertex(v Vertex[T], info *walkerVertex[T]) {
+// func (w *Walker[T]) walkVertex(v T, info *walkerT) {
 // 	// When we're done executing, lower the waitgroup count
 // 	defer w.wait.Done()
 
@@ -345,8 +345,8 @@ package dag
 // }
 
 // func (w *Walker[T]) waitDeps(
-// 	v Vertex[T],
-// 	deps map[Vertex[T]]<-chan struct{},
+// 	v T,
+// 	deps map[T]<-chan struct{},
 // 	doneCh chan<- bool,
 // 	cancelCh <-chan struct{}) {
 

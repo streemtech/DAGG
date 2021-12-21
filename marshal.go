@@ -59,7 +59,9 @@ type marshalVertex struct {
 	graphNodeDotter GraphNodeDotter
 }
 
-func newMarshalVertex[T Hashable](v Vertex[T]) *marshalVertex {
+func newMarshalVertex[T Hashable](raw T) *marshalVertex {
+	var v interface{}
+	v = raw
 	dn, ok := v.(GraphNodeDotter)
 	if !ok {
 		dn = nil
@@ -67,11 +69,11 @@ func newMarshalVertex[T Hashable](v Vertex[T]) *marshalVertex {
 
 	// the name will be quoted again later, so we need to ensure it's properly
 	// escaped without quotes.
-	name := strconv.Quote(VertexName(v))
+	name := strconv.Quote(VertexName(raw))
 	name = name[1 : len(name)-1]
 
 	return &marshalVertex{
-		ID:              marshalVertexID(v),
+		ID:              marshalVertexID(raw),
 		Name:            name,
 		Attrs:           make(map[string]string),
 		graphNodeDotter: dn,
@@ -153,13 +155,15 @@ func newMarshalGraph[T Hashable](name string, g *Graph[T]) *marshalGraph {
 }
 
 // Attempt to return a unique ID for any vertex.
-func marshalVertexID[T Hashable](v Vertex[T]) string {
+func marshalVertexID[T Hashable](v T) string {
 
 	return v.Hashcode()
 }
 
 // check for a Subgrapher, and return the underlying *Graph.
-func marshalSubgrapher[T Hashable](v Vertex[T]) (*Graph[T], bool) {
+func marshalSubgrapher[T Hashable](raw T) (*Graph[T], bool) {
+	var v interface{}
+	v = raw
 	sg, ok := v.(Subgrapher)
 	if !ok {
 		return nil, false

@@ -4,29 +4,29 @@ package dag
 // within the Graph g. This information is primarily used by this package
 // for cycle detection, but strongly connected components have widespread
 // use.
-func StronglyConnected[T Hashable](g *Graph[T]) [][]Vertex[T] {
+func StronglyConnected[T Hashable](g *Graph[T]) [][]T {
 	vs := g.Vertices()
 	acct := sccAcct[T]{
 		NextIndex:   1,
-		VertexIndex: make(map[Vertex[T]]int, len(vs)),
+		VertexIndex: make(map[string]int, len(vs)),
 	}
 	for _, v := range vs {
 		// Recurse on any non-visited nodes
-		if acct.VertexIndex[v] == 0 {
+		if acct.VertexIndex[v.Hashcode()] == 0 {
 			stronglyConnected(&acct, g, v)
 		}
 	}
 	return acct.SCC
 }
 
-func stronglyConnected[T Hashable](acct *sccAcct[T], g *Graph[T], v Vertex[T]) int {
+func stronglyConnected[T Hashable](acct *sccAcct[T], g *Graph[T], v T) int {
 	// Initial vertex visit
 	index := acct.visit(v)
 	minIdx := index
 
 	for _, raw := range g.downEdgesNoCopy(v) {
 		target := raw
-		targetIdx := acct.VertexIndex[target]
+		targetIdx := acct.VertexIndex[target.Hashcode()]
 
 		// Recurse on successor if not yet visited
 		if targetIdx == 0 {
@@ -40,11 +40,11 @@ func stronglyConnected[T Hashable](acct *sccAcct[T], g *Graph[T], v Vertex[T]) i
 	// Pop the strongly connected components off the stack if
 	// this is a root vertex
 	if index == minIdx {
-		var scc []Vertex[T]
+		var scc []T
 		for {
 			v2 := acct.pop()
 			scc = append(scc, v2)
-			if v2 == v {
+			if v2.Hashcode() == v.Hashcode() {
 				break
 			}
 		}
@@ -66,30 +66,32 @@ func min(a, b int) int {
 // the StronglyConnectedComponents algorithm
 type sccAcct[T Hashable] struct {
 	NextIndex   int
-	VertexIndex map[Vertex[T]]int
-	Stack       []Vertex[T]
-	SCC         [][]Vertex[T]
+	VertexIndex map[string]int
+	Stack       []T
+	SCC         [][]T
 }
 
 // visit assigns an index and pushes a vertex onto the stack
-func (s *sccAcct[T]) visit(v Vertex[T]) int {
+func (s *sccAcct[T]) visit(v T) int {
 	idx := s.NextIndex
-	s.VertexIndex[v] = idx
+	s.VertexIndex[v.Hashcode()] = idx
 	s.NextIndex++
 	s.push(v)
 	return idx
 }
 
 // push adds a vertex to the stack
-func (s *sccAcct[T]) push(n Vertex[T]) {
+func (s *sccAcct[T]) push(n T) {
 	s.Stack = append(s.Stack, n)
 }
 
 // pop removes a vertex from the stack
-func (s *sccAcct[T]) pop() Vertex[T] {
+func (s *sccAcct[T]) pop() T {
 	n := len(s.Stack)
 	if n == 0 {
-		return nil
+		var new T
+		return new
+
 	}
 	vertex := s.Stack[n-1]
 	s.Stack = s.Stack[:n-1]
@@ -97,9 +99,9 @@ func (s *sccAcct[T]) pop() Vertex[T] {
 }
 
 // inStack checks if a vertex is in the stack
-func (s *sccAcct[T]) inStack(needle Vertex[T]) bool {
+func (s *sccAcct[T]) inStack(needle T) bool {
 	for _, n := range s.Stack {
-		if n == needle {
+		if n.Hashcode() == needle.Hashcode() {
 			return true
 		}
 	}

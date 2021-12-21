@@ -22,8 +22,8 @@ func (t test) Hashcode() string {
 func TestBasicEdgeHashcode_pointer(t *testing.T) {
 
 	v1, v2 := &test{"foo"}, &test{"bar"}
-	e1 := BasicEdge[test](v1, v2)
-	e2 := BasicEdge[test](v1, v2)
+	e1 := BasicEdge(v1, v2)
+	e2 := BasicEdge(v1, v2)
 	if e1.Hashcode() != e2.Hashcode() {
 		t.Fatalf("bad")
 	}

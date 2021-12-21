@@ -56,7 +56,7 @@ func TestGraphStronglyConnected_three(t *testing.T) {
 	}
 }
 
-func testSCCStr[T Hashable](list [][]Vertex[T]) string {
+func testSCCStr[T Hashable](list [][]T) string {
 	var lines []string
 	for _, vs := range list {
 		result := make([]string, len(vs))

@@ -126,7 +126,7 @@ func TestGraphHasEdge(t *testing.T) {
 	if !g.HasEdge(BasicEdge[myint](myint(1), myint(2))) {
 		t.Fatal("should have 1,2")
 	}
-	if g.HasVertex(BasicEdge[myint](myint(2), myint(3))) {
+	if g.HasEdge(BasicEdge[myint](myint(2), myint(3))) {
 		t.Fatal("should not have 2,3")
 	}
 }

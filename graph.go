@@ -8,10 +8,10 @@ import (
 
 // Graph is used to represent a dependency graph.
 type Graph[T Hashable] struct {
-	vertices  Set[Vertex[T]]
+	vertices  Set[T]
 	edges     Set[Edge[T]]
-	downEdges map[string]Set[Vertex[T]]
-	upEdges   map[string]Set[Vertex[T]]
+	downEdges map[string]Set[T]
+	upEdges   map[string]Set[T]
 }
 
 // Subgrapher allows a Vertex to be a Graph itself, by returning a Grapher.
@@ -26,13 +26,12 @@ type Grapher interface {
 	DirectedGraph() Grapher
 }
 
-// Vertex of the graph.
-type Vertex[T Hashable] Hashable
+// // Vertex of the graph.
+// type Vertex[T Hashable] Hashable
 
 // NamedVertex is an optional interface that can be implemented by Vertex
 // to give it a human-friendly name that is used for outputting the graph.
-type NamedVertex[T Hashable] interface {
-	Vertex[T]
+type Named interface {
 	Name() string
 }
 
@@ -41,8 +40,8 @@ func (g *Graph[T]) DirectedGraph() Grapher {
 }
 
 // Vertices returns the list of all the vertices in the graph.
-func (g *Graph[T]) Vertices() []Vertex[T] {
-	result := make([]Vertex[T], 0, len(g.vertices))
+func (g *Graph[T]) Vertices() []T {
+	result := make([]T, 0, len(g.vertices))
 	for _, v := range g.vertices {
 		result = append(result, v)
 	}
@@ -61,7 +60,7 @@ func (g *Graph[T]) Edges() []Edge[T] {
 }
 
 // EdgesFrom returns the list of edges from the given source.
-func (g *Graph[T]) EdgesFrom(v Vertex[T]) []Edge[T] {
+func (g *Graph[T]) EdgesFrom(v T) []Edge[T] {
 	var result []Edge[T]
 	from := v.Hashcode()
 	for _, e := range g.Edges() {
@@ -74,7 +73,7 @@ func (g *Graph[T]) EdgesFrom(v Vertex[T]) []Edge[T] {
 }
 
 // EdgesTo returns the list of edges to the given target.
-func (g *Graph[T]) EdgesTo(v Vertex[T]) []Edge[T] {
+func (g *Graph[T]) EdgesTo(v T) []Edge[T] {
 	var result []Edge[T]
 	search := v.Hashcode()
 	for _, e := range g.Edges() {
@@ -87,7 +86,7 @@ func (g *Graph[T]) EdgesTo(v Vertex[T]) []Edge[T] {
 }
 
 // HasVertex checks if the given Vertex is present in the graph.
-func (g *Graph[T]) HasVertex(v Vertex[T]) bool {
+func (g *Graph[T]) HasVertex(v T) bool {
 	return g.vertices.Include(v)
 }
 
@@ -98,7 +97,7 @@ func (g *Graph[T]) HasEdge(e Edge[T]) bool {
 
 // Add adds a vertex to the graph. This is safe to call multiple time with
 // the same Vertex.
-func (g *Graph[T]) Add(v Vertex[T]) Vertex[T] {
+func (g *Graph[T]) Add(v T) T {
 	g.init()
 	g.vertices.Add(v)
 	return v
@@ -106,7 +105,7 @@ func (g *Graph[T]) Add(v Vertex[T]) Vertex[T] {
 
 // Remove removes a vertex from the graph. This will also remove any
 // edges with this vertex as a source or target.
-func (g *Graph[T]) Remove(v Vertex[T]) Vertex[T] {
+func (g *Graph[T]) Remove(v T) T {
 	// Delete the vertex itself
 	g.vertices.Delete(v)
 
@@ -117,21 +116,22 @@ func (g *Graph[T]) Remove(v Vertex[T]) Vertex[T] {
 	for _, source := range g.upEdgesNoCopy(v) {
 		g.RemoveEdge(BasicEdge(source, v))
 	}
+	var new T
+	return new
 
-	return nil
 }
 
 // Replace replaces the original Vertex with replacement. If the original
 // does not exist within the graph, then false is returned. Otherwise, true
 // is returned.
-func (g *Graph[T]) Replace(original, replacement Vertex[T]) bool {
+func (g *Graph[T]) Replace(original, replacement T) bool {
 	// If we don't have the original, we can't do anything
 	if !g.vertices.Include(original) {
 		return false
 	}
 
 	// If they're the same, then don't do anything
-	if original == replacement {
+	if original.Hashcode() == replacement.Hashcode() {
 		return true
 	}
 
@@ -168,19 +168,19 @@ func (g *Graph[T]) RemoveEdge(edge Edge[T]) {
 
 // UpEdges returns the vertices connected to the outward edges from the source
 // Vertex v.
-func (g *Graph[T]) UpEdges(v Vertex[T]) Set[Vertex[T]] {
+func (g *Graph[T]) UpEdges(v T) Set[T] {
 	return g.upEdgesNoCopy(v).Copy()
 }
 
 // DownEdges returns the vertices connected from the inward edges to Vertex v.
-func (g *Graph[T]) DownEdges(v Vertex[T]) Set[Vertex[T]] {
+func (g *Graph[T]) DownEdges(v T) Set[T] {
 	return g.downEdgesNoCopy(v).Copy()
 }
 
 // downEdgesNoCopy returns the outward edges from the source Vertex v as a Set.
 // This Set is the same as used internally bu the Graph to prevent a copy, and
 // must not be modified by the caller.
-func (g *Graph[T]) downEdgesNoCopy(v Vertex[T]) Set[Vertex[T]] {
+func (g *Graph[T]) downEdgesNoCopy(v T) Set[T] {
 	g.init()
 	return g.downEdges[v.Hashcode()]
 }
@@ -188,7 +188,7 @@ func (g *Graph[T]) downEdgesNoCopy(v Vertex[T]) Set[Vertex[T]] {
 // upEdgesNoCopy returns the inward edges to the destination Vertex v as a Set.
 // This Set is the same as used internally bu the Graph to prevent a copy, and
 // must not be modified by the caller.
-func (g *Graph[T]) upEdgesNoCopy(v Vertex[T]) Set[Vertex[T]] {
+func (g *Graph[T]) upEdgesNoCopy(v T) Set[T] {
 	g.init()
 	return g.upEdges[v.Hashcode()]
 }
@@ -216,7 +216,7 @@ func (g *Graph[T]) Connect(edge Edge[T]) {
 	// Add the down edge
 	s, ok := g.downEdges[sourceCode]
 	if !ok {
-		s = make(Set[Vertex[T]])
+		s = make(Set[T])
 		g.downEdges[sourceCode] = s
 	}
 	s.Add(target)
@@ -224,7 +224,7 @@ func (g *Graph[T]) Connect(edge Edge[T]) {
 	// Add the up edge
 	s, ok = g.upEdges[targetCode]
 	if !ok {
-		s = make(Set[Vertex[T]])
+		s = make(Set[T])
 		g.upEdges[targetCode] = s
 	}
 	s.Add(source)
@@ -238,7 +238,7 @@ func (g *Graph[T]) StringWithNodeTypes() string {
 	// easily alphabetize the output to remain deterministic.
 	vertices := g.Vertices()
 	names := make([]string, 0, len(vertices))
-	mapping := make(map[string]Vertex[T], len(vertices))
+	mapping := make(map[string]T, len(vertices))
 	for _, v := range vertices {
 		name := VertexName(v)
 		names = append(names, name)
@@ -255,7 +255,7 @@ func (g *Graph[T]) StringWithNodeTypes() string {
 
 		// Alphabetize dependencies
 		deps := make([]string, 0, targets.Len())
-		targetNodes := make(map[string]Vertex[T])
+		targetNodes := make(map[string]T)
 		for _, target := range targets {
 			dep := VertexName(target)
 			deps = append(deps, dep)
@@ -280,7 +280,7 @@ func (g *Graph[T]) String() string {
 	// easily alphabetize the output to remain deterministic.
 	vertices := g.Vertices()
 	names := make([]string, 0, len(vertices))
-	mapping := make(map[string]Vertex[T], len(vertices))
+	mapping := make(map[string]T, len(vertices))
 	for _, v := range vertices {
 		name := VertexName(v)
 		names = append(names, name)
@@ -313,16 +313,16 @@ func (g *Graph[T]) String() string {
 
 func (g *Graph[T]) init() {
 	if g.vertices == nil {
-		g.vertices = make(Set[Vertex[T]])
+		g.vertices = make(Set[T])
 	}
 	if g.edges == nil {
 		g.edges = make(Set[Edge[T]])
 	}
 	if g.downEdges == nil {
-		g.downEdges = make(map[string]Set[Vertex[T]])
+		g.downEdges = make(map[string]Set[T])
 	}
 	if g.upEdges == nil {
-		g.upEdges = make(map[string]Set[Vertex[T]])
+		g.upEdges = make(map[string]Set[T])
 	}
 }
 
@@ -332,13 +332,14 @@ func (g *Graph[T]) Dot(opts *DotOpts) []byte {
 }
 
 // VertexName returns the name of a vertex.
-func VertexName[T Hashable](raw Vertex[T]) string {
-	switch v := raw.(type) {
-	case NamedVertex[T]:
-		return v.Name()
-	case fmt.Stringer:
-		return v.String()
-	default:
-		return v.Hashcode()
+func VertexName[T Hashable](raw T) string {
+
+	var l interface{}
+	l = raw
+	n, ok := l.(Named)
+	if ok {
+		return n.Name()
 	}
+
+	return raw.Hashcode()
 }

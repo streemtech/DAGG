@@ -14,11 +14,11 @@ type AcyclicGraph[T Hashable] struct {
 }
 
 // WalkFunc is the callback used for walking the graph.
-type WalkFunc[T Hashable] func(Vertex[T])
+type WalkFunc[T Hashable] func(T)
 
 // DepthWalkFunc is a walk function that also receives the current depth of the
 // walk as an argument
-type DepthWalkFunc[T Hashable] func(Vertex[T], int) error
+type DepthWalkFunc[T Hashable] func(T, int) error
 
 func (g *AcyclicGraph[T]) DirectedGraph() Grapher {
 	return g
@@ -26,9 +26,9 @@ func (g *AcyclicGraph[T]) DirectedGraph() Grapher {
 
 // Returns a Set that includes every Vertex yielded by walking down from the
 // provided starting Vertex v.
-func (g *AcyclicGraph[T]) Ancestors(v Vertex[T]) (Set[Vertex[T]], error) {
-	s := make(Set[Vertex[T]])
-	memoFunc := func(v Vertex[T], d int) error {
+func (g *AcyclicGraph[T]) Ancestors(v T) (Set[T], error) {
+	s := make(Set[T])
+	memoFunc := func(v T, d int) error {
 		s.Add(v)
 		return nil
 	}
@@ -42,9 +42,9 @@ func (g *AcyclicGraph[T]) Ancestors(v Vertex[T]) (Set[Vertex[T]], error) {
 
 // Returns a Set that includes every Vertex yielded by walking up from the
 // provided starting Vertex v.
-func (g *AcyclicGraph[T]) Descendents(v Vertex[T]) (Set[Vertex[T]], error) {
-	s := make(Set[Vertex[T]])
-	memoFunc := func(v Vertex[T], d int) error {
+func (g *AcyclicGraph[T]) Descendents(v T) (Set[T], error) {
+	s := make(Set[T])
+	memoFunc := func(v T, d int) error {
 		s.Add(v)
 		return nil
 	}
@@ -59,8 +59,8 @@ func (g *AcyclicGraph[T]) Descendents(v Vertex[T]) (Set[Vertex[T]], error) {
 // Root returns the root of the DAG, or an error.
 //
 // Complexity: O(V)
-func (g *AcyclicGraph[T]) Root() (Vertex[T], error) {
-	roots := make([]Vertex[T], 0, 1)
+func (g *AcyclicGraph[T]) Root() (T, error) {
+	roots := make([]T, 0, 1)
 	for _, v := range g.Vertices() {
 		if g.upEdgesNoCopy(v).Len() == 0 {
 			roots = append(roots, v)
@@ -69,11 +69,13 @@ func (g *AcyclicGraph[T]) Root() (Vertex[T], error) {
 
 	if len(roots) > 1 {
 		// TODO(mitchellh): make this error message a lot better
-		return nil, fmt.Errorf("multiple roots: %#v", roots)
+		var new T
+		return new, fmt.Errorf("multiple roots: %#v", roots)
 	}
 
 	if len(roots) == 0 {
-		return nil, fmt.Errorf("no roots found")
+		var new T
+		return new, fmt.Errorf("no roots found")
 	}
 
 	return roots[0], nil
@@ -100,7 +102,7 @@ func (g *AcyclicGraph[T]) TransitiveReduction() {
 	for _, u := range g.Vertices() {
 		uTargets := g.downEdgesNoCopy(u)
 
-		g.DepthFirstWalk(g.downEdgesNoCopy(u), func(v Vertex[T], d int) error {
+		g.DepthFirstWalk(g.downEdgesNoCopy(u), func(v T, d int) error {
 			shared := uTargets.Intersection(g.downEdgesNoCopy(v))
 			for _, vPrime := range shared {
 				g.RemoveEdge(BasicEdge(u, vPrime))
@@ -135,7 +137,7 @@ func (g *AcyclicGraph[T]) Validate() error {
 
 	// Look for cycles to self
 	for _, e := range g.Edges() {
-		if e.Source() == e.Target() {
+		if e.Source().Hashcode() == e.Target().Hashcode() {
 			err = multierror.Append(err, fmt.Errorf(
 				"Self reference: %s", VertexName(e.Source())))
 		}
@@ -144,8 +146,8 @@ func (g *AcyclicGraph[T]) Validate() error {
 	return err
 }
 
-func (g *AcyclicGraph[T]) Cycles() [][]Vertex[T] {
-	var cycles [][]Vertex[T]
+func (g *AcyclicGraph[T]) Cycles() [][]T {
+	var cycles [][]T
 	for _, cycle := range StronglyConnected(&g.Graph) {
 		if len(cycle) > 1 {
 			cycles = append(cycles, cycle)
@@ -165,8 +167,8 @@ func (g *AcyclicGraph[T]) Cycles() [][]Vertex[T] {
 // }
 
 // simple convenience helper for converting a dag.Set to a []Vertex
-func AsVertexList[T Hashable](s Set[T]) []Vertex[T] {
-	vertexList := make([]Vertex[T], 0, len(s))
+func AsVertexList[T Hashable](s Set[T]) []T {
+	vertexList := make([]T, 0, len(s))
 	for _, raw := range s {
 		vertexList = append(vertexList, raw)
 	}
@@ -174,14 +176,14 @@ func AsVertexList[T Hashable](s Set[T]) []Vertex[T] {
 }
 
 type vertexAtDepth[T Hashable] struct {
-	Vertex Vertex[T]
+	Vertex T
 	Depth  int
 }
 
 // DepthFirstWalk does a depth-first walk of the graph starting from
 // the vertices in start.
-func (g *AcyclicGraph[T]) DepthFirstWalk(start Set[Vertex[T]], f DepthWalkFunc[T]) error {
-	seen := make(map[Vertex[T]]struct{})
+func (g *AcyclicGraph[T]) DepthFirstWalk(start Set[T], f DepthWalkFunc[T]) error {
+	seen := make(map[string]struct{})
 	frontier := make([]*vertexAtDepth[T], 0, len(start))
 	for _, v := range start {
 		frontier = append(frontier, &vertexAtDepth[T]{
@@ -196,10 +198,10 @@ func (g *AcyclicGraph[T]) DepthFirstWalk(start Set[Vertex[T]], f DepthWalkFunc[T
 		frontier = frontier[:n-1]
 
 		// Check if we've seen this already and return...
-		if _, ok := seen[current.Vertex]; ok {
+		if _, ok := seen[current.Vertex.Hashcode()]; ok {
 			continue
 		}
-		seen[current.Vertex] = struct{}{}
+		seen[current.Vertex.Hashcode()] = struct{}{}
 
 		// Visit the current node
 		if err := f(current.Vertex, current.Depth); err != nil {
@@ -219,8 +221,8 @@ func (g *AcyclicGraph[T]) DepthFirstWalk(start Set[Vertex[T]], f DepthWalkFunc[T
 
 // SortedDepthFirstWalk does a depth-first walk of the graph starting from
 // the vertices in start, always iterating the nodes in a consistent order.
-func (g *AcyclicGraph[T]) SortedDepthFirstWalk(start []Vertex[T], f DepthWalkFunc[T]) error {
-	seen := make(map[Vertex[T]]struct{})
+func (g *AcyclicGraph[T]) SortedDepthFirstWalk(start []T, f DepthWalkFunc[T]) error {
+	seen := make(map[string]struct{})
 	frontier := make([]*vertexAtDepth[T], len(start))
 	for i, v := range start {
 		frontier[i] = &vertexAtDepth[T]{
@@ -235,10 +237,10 @@ func (g *AcyclicGraph[T]) SortedDepthFirstWalk(start []Vertex[T], f DepthWalkFun
 		frontier = frontier[:n-1]
 
 		// Check if we've seen this already and return...
-		if _, ok := seen[current.Vertex]; ok {
+		if _, ok := seen[current.Vertex.Hashcode()]; ok {
 			continue
 		}
-		seen[current.Vertex] = struct{}{}
+		seen[current.Vertex.Hashcode()] = struct{}{}
 
 		// Visit the current node
 		if err := f(current.Vertex, current.Depth); err != nil {
@@ -247,7 +249,7 @@ func (g *AcyclicGraph[T]) SortedDepthFirstWalk(start []Vertex[T], f DepthWalkFun
 
 		// Visit targets of this in a consistent order.
 		targets := AsVertexList(g.downEdgesNoCopy(current.Vertex))
-		sort.Sort(byVertexName[Vertex[T]](targets))
+		sort.Sort(byVertexName[T](targets))
 
 		for _, t := range targets {
 			frontier = append(frontier, &vertexAtDepth[T]{
@@ -262,8 +264,8 @@ func (g *AcyclicGraph[T]) SortedDepthFirstWalk(start []Vertex[T], f DepthWalkFun
 
 // ReverseDepthFirstWalk does a depth-first walk _up_ the graph starting from
 // the vertices in start.
-func (g *AcyclicGraph[T]) ReverseDepthFirstWalk(start Set[Vertex[T]], f DepthWalkFunc[T]) error {
-	seen := make(map[Vertex[T]]struct{})
+func (g *AcyclicGraph[T]) ReverseDepthFirstWalk(start Set[T], f DepthWalkFunc[T]) error {
+	seen := make(map[string]struct{})
 	frontier := make([]*vertexAtDepth[T], 0, len(start))
 	for _, v := range start {
 		frontier = append(frontier, &vertexAtDepth[T]{
@@ -278,10 +280,10 @@ func (g *AcyclicGraph[T]) ReverseDepthFirstWalk(start Set[Vertex[T]], f DepthWal
 		frontier = frontier[:n-1]
 
 		// Check if we've seen this already and return...
-		if _, ok := seen[current.Vertex]; ok {
+		if _, ok := seen[current.Vertex.Hashcode()]; ok {
 			continue
 		}
-		seen[current.Vertex] = struct{}{}
+		seen[current.Vertex.Hashcode()] = struct{}{}
 
 		for _, t := range g.upEdgesNoCopy(current.Vertex) {
 			frontier = append(frontier, &vertexAtDepth[T]{
@@ -301,8 +303,8 @@ func (g *AcyclicGraph[T]) ReverseDepthFirstWalk(start Set[Vertex[T]], f DepthWal
 
 // SortedReverseDepthFirstWalk does a depth-first walk _up_ the graph starting from
 // the vertices in start, always iterating the nodes in a consistent order.
-func (g *AcyclicGraph[T]) SortedReverseDepthFirstWalk(start []Vertex[T], f DepthWalkFunc[T]) error {
-	seen := make(map[Vertex[T]]struct{})
+func (g *AcyclicGraph[T]) SortedReverseDepthFirstWalk(start []T, f DepthWalkFunc[T]) error {
+	seen := make(map[string]struct{})
 	frontier := make([]*vertexAtDepth[T], len(start))
 	for i, v := range start {
 		frontier[i] = &vertexAtDepth[T]{
@@ -317,14 +319,14 @@ func (g *AcyclicGraph[T]) SortedReverseDepthFirstWalk(start []Vertex[T], f Depth
 		frontier = frontier[:n-1]
 
 		// Check if we've seen this already and return...
-		if _, ok := seen[current.Vertex]; ok {
+		if _, ok := seen[current.Vertex.Hashcode()]; ok {
 			continue
 		}
-		seen[current.Vertex] = struct{}{}
+		seen[current.Vertex.Hashcode()] = struct{}{}
 
 		// Add next set of targets in a consistent order.
 		targets := AsVertexList(g.upEdgesNoCopy(current.Vertex))
-		sort.Sort(byVertexName[Vertex[T]](targets))
+		sort.Sort(byVertexName[T](targets))
 		for _, t := range targets {
 			frontier = append(frontier, &vertexAtDepth[T]{
 				Vertex: t,
@@ -343,7 +345,7 @@ func (g *AcyclicGraph[T]) SortedReverseDepthFirstWalk(start []Vertex[T], f Depth
 
 // byVertexName implements sort.Interface so a list of Vertices can be sorted
 // consistently by their VertexName
-type byVertexName[T Hashable] []Vertex[T]
+type byVertexName[T Hashable] []T
 
 func (b byVertexName[T]) Len() int      { return len(b) }
 func (b byVertexName[T]) Swap(i, j int) { b[i], b[j] = b[j], b[i] }

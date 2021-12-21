@@ -210,7 +210,7 @@ func TestAcyclicGraphAncestors(t *testing.T) {
 		t.Fatalf("err: %#v", err)
 	}
 
-	expected := []Vertex[myint]{myint(3), myint(4), myint(5)}
+	expected := []myint{myint(3), myint(4), myint(5)}
 
 	if actual.Len() != len(expected) {
 		t.Fatalf("bad length! expected %#v to have len %d", actual, len(expected))
@@ -241,7 +241,7 @@ func TestAcyclicGraphDescendents(t *testing.T) {
 		t.Fatalf("err: %#v", err)
 	}
 
-	expected := []Vertex[myint]{myint(0), myint(1)}
+	expected := []myint{myint(0), myint(1)}
 
 	if actual.Len() != len(expected) {
 		t.Fatalf("bad length! expected %#v to have len %d", actual, len(expected))
@@ -387,9 +387,9 @@ func TestAcyclicGraph_ReverseDepthFirstWalk_WithRemoval(t *testing.T) {
 	g.Connect(BasicEdge[myint](myint(3), myint(2)))
 	g.Connect(BasicEdge[myint](myint(2), myint(1)))
 
-	var visits []Vertex[myint]
+	var visits []myint
 	var lock sync.Mutex
-	err := g.SortedReverseDepthFirstWalk([]Vertex[myint]{myint(1)}, func(v Vertex[myint], d int) error {
+	err := g.SortedReverseDepthFirstWalk([]myint{myint(1)}, func(v myint, d int) error {
 		lock.Lock()
 		defer lock.Unlock()
 		visits = append(visits, v)
@@ -400,7 +400,7 @@ func TestAcyclicGraph_ReverseDepthFirstWalk_WithRemoval(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	expected := []Vertex[myint]{myint(1), myint(2), myint(3)}
+	expected := []myint{myint(1), myint(2), myint(3)}
 	if !reflect.DeepEqual(visits, expected) {
 		t.Fatalf("expected: %#v, got: %#v", expected, visits)
 	}
