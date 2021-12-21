@@ -26,7 +26,7 @@ func (g *AcyclicGraph[T]) DirectedGraph() Grapher {
 
 // Returns a Set that includes every Vertex yielded by walking down from the
 // provided starting Vertex v.
-func (g *AcyclicGraph[T]) Ancestors(v T) (Set[Vertex[T]], error) {
+func (g *AcyclicGraph[T]) Ancestors(v Vertex[T]) (Set[Vertex[T]], error) {
 	s := make(Set[Vertex[T]])
 	memoFunc := func(v Vertex[T], d int) error {
 		s.Add(v)
@@ -154,15 +154,15 @@ func (g *AcyclicGraph[T]) Cycles() [][]Vertex[T] {
 	return cycles
 }
 
-// Walk walks the graph, calling your callback as each node is visited.
-// This will walk nodes in parallel if it can. The resulting diagnostics
-// contains problems from all graphs visited, in no particular order.
-func (g *AcyclicGraph[T]) Walk(cb WalkFunc[T]) {
-	w := &Walker[T]{Callback: cb, Reverse: true}
-	w.Update(g)
-	w.Wait()
+// // Walk walks the graph, calling your callback as each node is visited.
+// // This will walk nodes in parallel if it can. The resulting diagnostics
+// // contains problems from all graphs visited, in no particular order.
+// func (g *AcyclicGraph[T]) Walk(cb WalkFunc[T]) {
+// 	w := &Walker[T]{Callback: cb, Reverse: true}
+// 	w.Update(g)
+// 	w.Wait()
 
-}
+// }
 
 // simple convenience helper for converting a dag.Set to a []Vertex
 func AsVertexList[T Hashable](s Set[T]) []Vertex[T] {

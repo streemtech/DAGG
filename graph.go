@@ -339,6 +339,6 @@ func VertexName[T Hashable](raw Vertex[T]) string {
 	case fmt.Stringer:
 		return v.String()
 	default:
-		return fmt.Sprintf("%v", v)
+		return v.Hashcode()
 	}
 }
