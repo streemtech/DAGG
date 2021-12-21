@@ -1,4 +1,4 @@
-package dag
+package dagg
 
 // // Walker is used to walk every vertex of a graph in parallel.
 // //

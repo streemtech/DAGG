@@ -1,4 +1,4 @@
-package dag
+package dagg
 
 // StronglyConnected returns the list of strongly connected components
 // within the Graph g. This information is primarily used by this package

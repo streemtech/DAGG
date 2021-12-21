@@ -1,4 +1,4 @@
-package dag
+package dagg
 
 // Set is a set data structure.
 type Set[T Hashable] map[string]T
