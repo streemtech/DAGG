@@ -144,7 +144,7 @@ func (w *Walker[T]) Update(g *AcyclicGraph[T]) {
 
 	// Add the new vertices
 	for _, raw := range newVerts {
-		v := raw.(Vertex[T])
+		v := raw
 
 		// Add to the waitgroup so our walk is not done until everything finishes
 		w.wait.Add(1)
@@ -275,7 +275,7 @@ func (w *Walker[T]) Update(g *AcyclicGraph[T]) {
 	// Start all the new vertices. We do this at the end so that all
 	// the edge waiters and changes are set up above.
 	for _, raw := range newVerts {
-		v := raw.(Vertex[T])
+		v := raw
 		go w.walkVertex(v, w.vertexMap[v])
 	}
 }

@@ -2,15 +2,22 @@ package dag
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 )
 
+type myint int
+
+func (m myint) Hashcode() string {
+	return strconv.Itoa(int(m))
+}
+
 func TestGraph_empty(t *testing.T) {
-	var g Graph
-	g.Add(1)
-	g.Add(2)
-	g.Add(3)
+	var g Graph[myint]
+	g.Add(myint(1))
+	g.Add(myint(2))
+	g.Add(myint(3))
 
 	actual := strings.TrimSpace(g.String())
 	expected := strings.TrimSpace(testGraphEmptyStr)
@@ -20,11 +27,11 @@ func TestGraph_empty(t *testing.T) {
 }
 
 func TestGraph_basic(t *testing.T) {
-	var g Graph
-	g.Add(1)
-	g.Add(2)
-	g.Add(3)
-	g.Connect(BasicEdge(1, 3))
+	var g Graph[myint]
+	g.Add(myint(1))
+	g.Add(myint(2))
+	g.Add(myint(3))
+	g.Connect(BasicEdge[myint](myint(1), myint(3)))
 
 	actual := strings.TrimSpace(g.String())
 	expected := strings.TrimSpace(testGraphBasicStr)
@@ -34,12 +41,12 @@ func TestGraph_basic(t *testing.T) {
 }
 
 func TestGraph_remove(t *testing.T) {
-	var g Graph
-	g.Add(1)
-	g.Add(2)
-	g.Add(3)
-	g.Connect(BasicEdge(1, 3))
-	g.Remove(3)
+	var g Graph[myint]
+	g.Add(myint(1))
+	g.Add(myint(2))
+	g.Add(myint(3))
+	g.Connect(BasicEdge[myint](myint(1), myint(3)))
+	g.Remove(myint(3))
 
 	actual := strings.TrimSpace(g.String())
 	expected := strings.TrimSpace(testGraphRemoveStr)
@@ -49,13 +56,13 @@ func TestGraph_remove(t *testing.T) {
 }
 
 func TestGraph_replace(t *testing.T) {
-	var g Graph
-	g.Add(1)
-	g.Add(2)
-	g.Add(3)
-	g.Connect(BasicEdge(1, 2))
-	g.Connect(BasicEdge(2, 3))
-	g.Replace(2, 42)
+	var g Graph[myint]
+	g.Add(myint(1))
+	g.Add(myint(2))
+	g.Add(myint(3))
+	g.Connect(BasicEdge[myint](myint(1), myint(2)))
+	g.Connect(BasicEdge[myint](myint(2), myint(3)))
+	g.Replace(myint(2), myint(42))
 
 	actual := strings.TrimSpace(g.String())
 	expected := strings.TrimSpace(testGraphReplaceStr)
@@ -65,13 +72,13 @@ func TestGraph_replace(t *testing.T) {
 }
 
 func TestGraph_replaceSelf(t *testing.T) {
-	var g Graph
-	g.Add(1)
-	g.Add(2)
-	g.Add(3)
-	g.Connect(BasicEdge(1, 2))
-	g.Connect(BasicEdge(2, 3))
-	g.Replace(2, 2)
+	var g Graph[myint]
+	g.Add(myint(1))
+	g.Add(myint(2))
+	g.Add(myint(3))
+	g.Connect(BasicEdge[myint](myint(1), myint(2)))
+	g.Connect(BasicEdge[myint](myint(2), myint(3)))
+	g.Replace(myint(2), myint(2))
 
 	actual := strings.TrimSpace(g.String())
 	expected := strings.TrimSpace(testGraphReplaceSelfStr)
@@ -83,11 +90,11 @@ func TestGraph_replaceSelf(t *testing.T) {
 // This tests that connecting edges works based on custom Hashcode
 // implementations for uniqueness.
 func TestGraph_hashcode(t *testing.T) {
-	var g Graph
+	var g Graph[*hashVertex]
 	g.Add(&hashVertex{code: 1})
 	g.Add(&hashVertex{code: 2})
 	g.Add(&hashVertex{code: 3})
-	g.Connect(BasicEdge(
+	g.Connect(BasicEdge[*hashVertex](
 		&hashVertex{code: 1},
 		&hashVertex{code: 3}))
 
@@ -99,45 +106,45 @@ func TestGraph_hashcode(t *testing.T) {
 }
 
 func TestGraphHasVertex(t *testing.T) {
-	var g Graph
-	g.Add(1)
+	var g Graph[myint]
+	g.Add(myint(1))
 
-	if !g.HasVertex(1) {
+	if !g.HasVertex(myint(1)) {
 		t.Fatal("should have 1")
 	}
-	if g.HasVertex(2) {
+	if g.HasVertex(myint(2)) {
 		t.Fatal("should not have 2")
 	}
 }
 
 func TestGraphHasEdge(t *testing.T) {
-	var g Graph
-	g.Add(1)
-	g.Add(2)
-	g.Connect(BasicEdge(1, 2))
+	var g Graph[myint]
+	g.Add(myint(1))
+	g.Add(myint(2))
+	g.Connect(BasicEdge[myint](myint(1), myint(2)))
 
-	if !g.HasEdge(BasicEdge(1, 2)) {
+	if !g.HasEdge(BasicEdge[myint](myint(1), myint(2))) {
 		t.Fatal("should have 1,2")
 	}
-	if g.HasVertex(BasicEdge(2, 3)) {
+	if g.HasVertex(BasicEdge[myint](myint(2), myint(3))) {
 		t.Fatal("should not have 2,3")
 	}
 }
 
 func TestGraphEdgesFrom(t *testing.T) {
-	var g Graph
-	g.Add(1)
-	g.Add(2)
-	g.Add(3)
-	g.Connect(BasicEdge(1, 3))
-	g.Connect(BasicEdge(2, 3))
+	var g Graph[myint]
+	g.Add(myint(1))
+	g.Add(myint(2))
+	g.Add(myint(3))
+	g.Connect(BasicEdge[myint](myint(1), myint(3)))
+	g.Connect(BasicEdge[myint](myint(2), myint(3)))
 
-	edges := g.EdgesFrom(1)
+	edges := g.EdgesFrom(myint(1))
 
-	expected := make(Set)
-	expected.Add(BasicEdge(1, 3))
+	expected := make(Set[Edge[myint]])
+	expected.Add(BasicEdge[myint](myint(1), myint(3)))
 
-	s := make(Set)
+	s := make(Set[Edge[myint]])
 	for _, e := range edges {
 		s.Add(e)
 	}
@@ -148,19 +155,19 @@ func TestGraphEdgesFrom(t *testing.T) {
 }
 
 func TestGraphEdgesTo(t *testing.T) {
-	var g Graph
-	g.Add(1)
-	g.Add(2)
-	g.Add(3)
-	g.Connect(BasicEdge(1, 3))
-	g.Connect(BasicEdge(1, 2))
+	var g Graph[myint]
+	g.Add(myint(1))
+	g.Add(myint(2))
+	g.Add(myint(3))
+	g.Connect(BasicEdge[myint](myint(1), myint(3)))
+	g.Connect(BasicEdge[myint](myint(1), myint(2)))
 
-	edges := g.EdgesTo(3)
+	edges := g.EdgesTo(myint(3))
 
-	expected := make(Set)
-	expected.Add(BasicEdge(1, 3))
+	expected := make(Set[Edge[myint]])
+	expected.Add(BasicEdge[myint](myint(1), myint(3)))
 
-	s := make(Set)
+	s := make(Set[Edge[myint]])
 	for _, e := range edges {
 		s.Add(e)
 	}
@@ -172,36 +179,36 @@ func TestGraphEdgesTo(t *testing.T) {
 
 func TestGraphUpdownEdges(t *testing.T) {
 	// Verify that we can't inadvertently modify the internal graph sets
-	var g Graph
-	g.Add(1)
-	g.Add(2)
-	g.Add(3)
-	g.Connect(BasicEdge(1, 2))
-	g.Connect(BasicEdge(2, 3))
+	var g Graph[myint]
+	g.Add(myint(1))
+	g.Add(myint(2))
+	g.Add(myint(3))
+	g.Connect(BasicEdge[myint](myint(1), myint(2)))
+	g.Connect(BasicEdge[myint](myint(2), myint(3)))
 
-	up := g.UpEdges(2)
-	if up.Len() != 1 || !up.Include(1) {
+	up := g.UpEdges(myint(2))
+	if up.Len() != 1 || !up.Include(myint(1)) {
 		t.Fatalf("expected only an up edge of '1', got %#v", up)
 	}
 	// modify the up set
-	up.Add(9)
+	up.Add(myint(9))
 
-	orig := g.UpEdges(2)
+	orig := g.UpEdges(myint(2))
 	diff := up.Difference(orig)
-	if diff.Len() != 1 || !diff.Include(9) {
+	if diff.Len() != 1 || !diff.Include(myint(9)) {
 		t.Fatalf("expected a diff of only '9', got %#v", diff)
 	}
 
-	down := g.DownEdges(2)
-	if down.Len() != 1 || !down.Include(3) {
+	down := g.DownEdges(myint(2))
+	if down.Len() != 1 || !down.Include(myint(3)) {
 		t.Fatalf("expected only a down edge of '3', got %#v", down)
 	}
 	// modify the down set
-	down.Add(8)
+	down.Add(myint(8))
 
-	orig = g.DownEdges(2)
+	orig = g.DownEdges(myint(2))
 	diff = down.Difference(orig)
-	if diff.Len() != 1 || !diff.Include(8) {
+	if diff.Len() != 1 || !diff.Include(myint(8)) {
 		t.Fatalf("expected a diff of only '8', got %#v", diff)
 	}
 }
@@ -210,8 +217,8 @@ type hashVertex struct {
 	code interface{}
 }
 
-func (v *hashVertex) Hashcode() interface{} {
-	return v.code
+func (v *hashVertex) Hashcode() string {
+	return fmt.Sprintf("%v", v.code)
 }
 
 func (v *hashVertex) Name() string {

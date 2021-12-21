@@ -25,7 +25,7 @@ type basicEdge[T Hashable] struct {
 }
 
 func (e *basicEdge[T]) Hashcode() string {
-	return fmt.Sprintf("%p-%p", e.S, e.T)
+	return fmt.Sprintf("%s-%s", e.S.Hashcode(), e.T.Hashcode())
 }
 
 func (e *basicEdge[T]) Source() Vertex[T] {

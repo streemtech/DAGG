@@ -159,10 +159,10 @@ func (g *Graph[T]) RemoveEdge(edge Edge[T]) {
 
 	// Delete the up/down edges
 	if s, ok := g.downEdges[edge.Source().Hashcode()]; ok {
-		s.Delete(edge)
+		s.Delete(edge.Target())
 	}
 	if s, ok := g.upEdges[edge.Target().Hashcode()]; ok {
-		s.Delete(edge)
+		s.Delete(edge.Source())
 	}
 }
 

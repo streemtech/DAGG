@@ -14,4 +14,4 @@ replace github.com/golang/mock v1.5.0 => github.com/golang/mock v1.4.4
 // replacement that includes a fix for CVE-2020-26160.
 replace github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt v3.2.1+incompatible
 
-go 1.17
+go 1.18
