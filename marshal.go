@@ -2,7 +2,6 @@ package dag
 
 import (
 	"fmt"
-	"reflect"
 	"sort"
 	"strconv"
 )
@@ -60,7 +59,7 @@ type marshalVertex struct {
 	graphNodeDotter GraphNodeDotter
 }
 
-func newMarshalVertex(v Vertex) *marshalVertex {
+func newMarshalVertex[T Hashable](v Vertex[T]) *marshalVertex {
 	dn, ok := v.(GraphNodeDotter)
 	if !ok {
 		dn = nil
@@ -97,7 +96,7 @@ type marshalEdge struct {
 	Attrs map[string]string `json:",omitempty"`
 }
 
-func newMarshalEdge(e Edge) *marshalEdge {
+func newMarshalEdge[T Hashable](e Edge[T]) *marshalEdge {
 	return &marshalEdge{
 		Name:   fmt.Sprintf("%s|%s", VertexName(e.Source()), VertexName(e.Target())),
 		Source: marshalVertexID(e.Source()),
@@ -114,7 +113,7 @@ func (e edges) Len() int           { return len(e) }
 func (e edges) Swap(i, j int)      { e[i], e[j] = e[j], e[i] }
 
 // build a marshalGraph structure from a *Graph
-func newMarshalGraph(name string, g *Graph) *marshalGraph {
+func newMarshalGraph[T Hashable](name string, g *Graph[T]) *marshalGraph {
 	mg := &marshalGraph{
 		Type:  "Graph",
 		Name:  name,
@@ -141,7 +140,7 @@ func newMarshalGraph(name string, g *Graph) *marshalGraph {
 
 	sort.Sort(edges(mg.Edges))
 
-	for _, c := range (&AcyclicGraph{*g}).Cycles() {
+	for _, c := range (&AcyclicGraph[T]{*g}).Cycles() {
 		var cycle []*marshalVertex
 		for _, v := range c {
 			mv := newMarshalVertex(v)
@@ -154,42 +153,22 @@ func newMarshalGraph(name string, g *Graph) *marshalGraph {
 }
 
 // Attempt to return a unique ID for any vertex.
-func marshalVertexID(v Vertex) string {
-	val := reflect.ValueOf(v)
-	switch val.Kind() {
-	case reflect.Chan, reflect.Func, reflect.Map, reflect.Ptr, reflect.Slice, reflect.UnsafePointer:
-		return strconv.Itoa(int(val.Pointer()))
-	case reflect.Interface:
-		// A vertex shouldn't contain another layer of interface, but handle
-		// this just in case.
-		return fmt.Sprintf("%#v", val.Interface())
-	}
+func marshalVertexID[T Hashable](v Vertex[T]) string {
 
-	if v, ok := v.(Hashable); ok {
-		h := v.Hashcode()
-		if h, ok := h.(string); ok {
-			return h
-		}
-	}
-
-	// fallback to a name, which we hope is unique.
-	return VertexName(v)
-
-	// we could try harder by attempting to read the arbitrary value from the
-	// interface, but we shouldn't get here from terraform right now.
+	return v.Hashcode()
 }
 
 // check for a Subgrapher, and return the underlying *Graph.
-func marshalSubgrapher(v Vertex) (*Graph, bool) {
+func marshalSubgrapher[T Hashable](v Vertex[T]) (*Graph[T], bool) {
 	sg, ok := v.(Subgrapher)
 	if !ok {
 		return nil, false
 	}
 
 	switch g := sg.Subgraph().DirectedGraph().(type) {
-	case *Graph:
+	case *Graph[T]:
 		return g, true
-	case *AcyclicGraph:
+	case *AcyclicGraph[T]:
 		return &g.Graph, true
 	}
 

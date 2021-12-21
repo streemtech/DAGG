@@ -1,43 +1,34 @@
 package dag
 
 // Set is a set data structure.
-type Set map[interface{}]interface{}
+type Set[T Hashable] map[string]T
 
 // Hashable is the interface used by set to get the hash code of a value.
 // If this isn't given, then the value of the item being added to the set
 // itself is used as the comparison value.
 type Hashable interface {
-	Hashcode() interface{}
-}
-
-// hashcode returns the hashcode used for set elements.
-func hashcode(v interface{}) interface{} {
-	if h, ok := v.(Hashable); ok {
-		return h.Hashcode()
-	}
-
-	return v
+	Hashcode() string
 }
 
 // Add adds an item to the set
-func (s Set) Add(v interface{}) {
-	s[hashcode(v)] = v
+func (s Set[T]) Add(v T) {
+	s[v.Hashcode()] = v
 }
 
 // Delete removes an item from the set.
-func (s Set) Delete(v interface{}) {
-	delete(s, hashcode(v))
+func (s Set[T]) Delete(v T) {
+	delete(s, v.Hashcode())
 }
 
 // Include returns true/false of whether a value is in the set.
-func (s Set) Include(v interface{}) bool {
-	_, ok := s[hashcode(v)]
+func (s Set[T]) Include(v T) bool {
+	_, ok := s[v.Hashcode()]
 	return ok
 }
 
 // Intersection computes the set intersection with other.
-func (s Set) Intersection(other Set) Set {
-	result := make(Set)
+func (s Set[T]) Intersection(other Set[T]) Set[T] {
+	result := make(Set[T])
 	if s == nil || other == nil {
 		return result
 	}
@@ -55,12 +46,12 @@ func (s Set) Intersection(other Set) Set {
 
 // Difference returns a set with the elements that s has but
 // other doesn't.
-func (s Set) Difference(other Set) Set {
+func (s Set[T]) Difference(other Set[T]) Set[T] {
 	if other == nil || other.Len() == 0 {
 		return s.Copy()
 	}
 
-	result := make(Set)
+	result := make(Set[T])
 	for k, v := range s {
 		if _, ok := other[k]; !ok {
 			result.Add(v)
@@ -72,8 +63,8 @@ func (s Set) Difference(other Set) Set {
 
 // Filter returns a set that contains the elements from the receiver
 // where the given callback returns true.
-func (s Set) Filter(cb func(interface{}) bool) Set {
-	result := make(Set)
+func (s Set[T]) Filter(cb func(T) bool) Set[T] {
+	result := make(Set[T])
 
 	for _, v := range s {
 		if cb(v) {
@@ -85,17 +76,17 @@ func (s Set) Filter(cb func(interface{}) bool) Set {
 }
 
 // Len is the number of items in the set.
-func (s Set) Len() int {
+func (s Set[T]) Len() int {
 	return len(s)
 }
 
 // List returns the list of set elements.
-func (s Set) List() []interface{} {
+func (s Set[T]) List() []T {
 	if s == nil {
 		return nil
 	}
 
-	r := make([]interface{}, 0, len(s))
+	r := make([]T, 0, len(s))
 	for _, v := range s {
 		r = append(r, v)
 	}
@@ -104,8 +95,8 @@ func (s Set) List() []interface{} {
 }
 
 // Copy returns a shallow copy of the set.
-func (s Set) Copy() Set {
-	c := make(Set, len(s))
+func (s Set[T]) Copy() Set[T] {
+	c := make(Set[T], len(s))
 	for k, v := range s {
 		c[k] = v
 	}

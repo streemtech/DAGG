@@ -4,11 +4,11 @@ package dag
 // within the Graph g. This information is primarily used by this package
 // for cycle detection, but strongly connected components have widespread
 // use.
-func StronglyConnected(g *Graph) [][]Vertex {
+func StronglyConnected[T Hashable](g *Graph[T]) [][]Vertex[T] {
 	vs := g.Vertices()
-	acct := sccAcct{
+	acct := sccAcct[T]{
 		NextIndex:   1,
-		VertexIndex: make(map[Vertex]int, len(vs)),
+		VertexIndex: make(map[Vertex[T]]int, len(vs)),
 	}
 	for _, v := range vs {
 		// Recurse on any non-visited nodes
@@ -19,13 +19,13 @@ func StronglyConnected(g *Graph) [][]Vertex {
 	return acct.SCC
 }
 
-func stronglyConnected(acct *sccAcct, g *Graph, v Vertex) int {
+func stronglyConnected[T Hashable](acct *sccAcct[T], g *Graph[T], v Vertex[T]) int {
 	// Initial vertex visit
 	index := acct.visit(v)
 	minIdx := index
 
 	for _, raw := range g.downEdgesNoCopy(v) {
-		target := raw.(Vertex)
+		target := raw
 		targetIdx := acct.VertexIndex[target]
 
 		// Recurse on successor if not yet visited
@@ -40,7 +40,7 @@ func stronglyConnected(acct *sccAcct, g *Graph, v Vertex) int {
 	// Pop the strongly connected components off the stack if
 	// this is a root vertex
 	if index == minIdx {
-		var scc []Vertex
+		var scc []Vertex[T]
 		for {
 			v2 := acct.pop()
 			scc = append(scc, v2)
@@ -64,15 +64,15 @@ func min(a, b int) int {
 
 // sccAcct is used ot pass around accounting information for
 // the StronglyConnectedComponents algorithm
-type sccAcct struct {
+type sccAcct[T Hashable] struct {
 	NextIndex   int
-	VertexIndex map[Vertex]int
-	Stack       []Vertex
-	SCC         [][]Vertex
+	VertexIndex map[Vertex[T]]int
+	Stack       []Vertex[T]
+	SCC         [][]Vertex[T]
 }
 
 // visit assigns an index and pushes a vertex onto the stack
-func (s *sccAcct) visit(v Vertex) int {
+func (s *sccAcct[T]) visit(v Vertex[T]) int {
 	idx := s.NextIndex
 	s.VertexIndex[v] = idx
 	s.NextIndex++
@@ -81,12 +81,12 @@ func (s *sccAcct) visit(v Vertex) int {
 }
 
 // push adds a vertex to the stack
-func (s *sccAcct) push(n Vertex) {
+func (s *sccAcct[T]) push(n Vertex[T]) {
 	s.Stack = append(s.Stack, n)
 }
 
 // pop removes a vertex from the stack
-func (s *sccAcct) pop() Vertex {
+func (s *sccAcct[T]) pop() Vertex[T] {
 	n := len(s.Stack)
 	if n == 0 {
 		return nil
@@ -97,7 +97,7 @@ func (s *sccAcct) pop() Vertex {
 }
 
 // inStack checks if a vertex is in the stack
-func (s *sccAcct) inStack(needle Vertex) bool {
+func (s *sccAcct[T]) inStack(needle Vertex[T]) bool {
 	for _, n := range s.Stack {
 		if n == needle {
 			return true

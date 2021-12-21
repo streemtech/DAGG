@@ -30,9 +30,9 @@ import (
 // A single walker is only valid for one graph walk. After the walk is complete
 // you must construct a new walker to walk again. State for the walk is never
 // deleted in case vertices or edges are changed.
-type Walker struct {
+type Walker[T Hashable] struct {
 	// Callback is what is called for each vertex
-	Callback WalkFunc
+	Callback WalkFunc[T]
 
 	// Reverse, if true, causes the source of an edge to depend on a target.
 	// When false (default), the target depends on the source.
@@ -42,25 +42,25 @@ type Walker struct {
 	// should modify these fields. Modifying them outside of Update can cause
 	// serious problems.
 	changeLock sync.Mutex
-	vertices   Set
-	edges      Set
-	vertexMap  map[Vertex]*walkerVertex
+	vertices   Set[Vertex[T]]
+	edges      Set[Edge[T]]
+	vertexMap  map[Vertex[T]]*walkerVertex[T]
 
 	// wait is done when all vertices have executed. It may become "undone"
 	// if new vertices are added.
 	wait sync.WaitGroup
 }
 
-func (w *Walker) init() {
+func (w *Walker[T]) init() {
 	if w.vertices == nil {
-		w.vertices = make(Set)
+		w.vertices = make(Set[Vertex[T]])
 	}
 	if w.edges == nil {
-		w.edges = make(Set)
+		w.edges = make(Set[Edge[T]])
 	}
 }
 
-type walkerVertex struct {
+type walkerVertex[T Hashable] struct {
 	// These should only be set once on initialization and never written again.
 	// They are not protected by a lock since they don't need to be since
 	// they are write-once.
@@ -89,7 +89,7 @@ type walkerVertex struct {
 	// Below is not safe to read/write in parallel. This behavior is
 	// enforced by changes only happening in Update. Nothing else should
 	// ever modify these.
-	deps         map[Vertex]chan struct{}
+	deps         map[Vertex[T]]chan struct{}
 	depsCancelCh chan struct{}
 }
 
@@ -100,7 +100,7 @@ type walkerVertex struct {
 // Wait will return as soon as all currently known vertices are complete.
 // If you plan on calling Update with more vertices in the future, you
 // should not call Wait until after this is done.
-func (w *Walker) Wait() {
+func (w *Walker[T]) Wait() {
 	// Wait for completion
 	w.wait.Wait()
 
@@ -117,10 +117,10 @@ func (w *Walker) Wait() {
 //
 // Multiple Updates can be called in parallel. Update can be called at any
 // time during a walk.
-func (w *Walker) Update(g *AcyclicGraph) {
+func (w *Walker[T]) Update(g *AcyclicGraph[T]) {
 	w.init()
-	v := make(Set)
-	e := make(Set)
+	v := make(Set[Vertex[T]])
+	e := make(Set[Edge[T]])
 	if g != nil {
 		v, e = g.vertices, g.edges
 	}
@@ -133,7 +133,7 @@ func (w *Walker) Update(g *AcyclicGraph) {
 
 	// Initialize fields
 	if w.vertexMap == nil {
-		w.vertexMap = make(map[Vertex]*walkerVertex)
+		w.vertexMap = make(map[Vertex[T]]*walkerVertex[T])
 	}
 
 	// Calculate all our sets
@@ -144,7 +144,7 @@ func (w *Walker) Update(g *AcyclicGraph) {
 
 	// Add the new vertices
 	for _, raw := range newVerts {
-		v := raw.(Vertex)
+		v := raw.(Vertex[T])
 
 		// Add to the waitgroup so our walk is not done until everything finishes
 		w.wait.Add(1)
@@ -153,10 +153,10 @@ func (w *Walker) Update(g *AcyclicGraph) {
 		w.vertices.Add(raw)
 
 		// Initialize the vertex info
-		info := &walkerVertex{
+		info := &walkerVertex[T]{
 			DoneCh:   make(chan struct{}),
 			CancelCh: make(chan struct{}),
-			deps:     make(map[Vertex]chan struct{}),
+			deps:     make(map[Vertex[T]]chan struct{}),
 		}
 
 		// Add it to the map and kick off the walk
@@ -165,7 +165,7 @@ func (w *Walker) Update(g *AcyclicGraph) {
 
 	// Remove the old vertices
 	for _, raw := range oldVerts {
-		v := raw.(Vertex)
+		v := raw
 
 		// Get the vertex info so we can cancel it
 		info, ok := w.vertexMap[v]
@@ -184,9 +184,9 @@ func (w *Walker) Update(g *AcyclicGraph) {
 	}
 
 	// Add the new edges
-	changedDeps := make(Set)
+	changedDeps := make(Set[Vertex[T]])
 	for _, raw := range newEdges {
-		edge := raw.(Edge)
+		edge := raw
 		waiter, dep := w.edgeParts(edge)
 
 		// Get the info for the waiter
@@ -213,7 +213,7 @@ func (w *Walker) Update(g *AcyclicGraph) {
 
 	// Process removed edges
 	for _, raw := range oldEdges {
-		edge := raw.(Edge)
+		edge := raw
 		waiter, dep := w.edgeParts(edge)
 
 		// Get the info for the waiter
@@ -234,7 +234,7 @@ func (w *Walker) Update(g *AcyclicGraph) {
 	// For each vertex with changed dependencies, we need to kick off
 	// a new waiter and notify the vertex of the changes.
 	for _, raw := range changedDeps {
-		v := raw.(Vertex)
+		v := raw
 		info, ok := w.vertexMap[v]
 		if !ok {
 			// Vertex doesn't exist... shouldn't be possible but ignore.
@@ -248,7 +248,7 @@ func (w *Walker) Update(g *AcyclicGraph) {
 		cancelCh := make(chan struct{})
 
 		// Build a new deps copy
-		deps := make(map[Vertex]<-chan struct{})
+		deps := make(map[Vertex[T]]<-chan struct{})
 		for k, v := range info.deps {
 			deps[k] = v
 		}
@@ -275,14 +275,14 @@ func (w *Walker) Update(g *AcyclicGraph) {
 	// Start all the new vertices. We do this at the end so that all
 	// the edge waiters and changes are set up above.
 	for _, raw := range newVerts {
-		v := raw.(Vertex)
+		v := raw.(Vertex[T])
 		go w.walkVertex(v, w.vertexMap[v])
 	}
 }
 
 // edgeParts returns the waiter and the dependency, in that order.
 // The waiter is waiting on the dependency.
-func (w *Walker) edgeParts(e Edge) (Vertex, Vertex) {
+func (w *Walker[T]) edgeParts(e Edge[T]) (Vertex[T], Vertex[T]) {
 	if w.Reverse {
 		return e.Source(), e.Target()
 	}
@@ -292,7 +292,7 @@ func (w *Walker) edgeParts(e Edge) (Vertex, Vertex) {
 
 // walkVertex walks a single vertex, waiting for any dependencies before
 // executing the callback.
-func (w *Walker) walkVertex(v Vertex, info *walkerVertex) {
+func (w *Walker[T]) walkVertex(v Vertex[T], info *walkerVertex[T]) {
 	// When we're done executing, lower the waitgroup count
 	defer w.wait.Done()
 
@@ -350,9 +350,9 @@ func (w *Walker) walkVertex(v Vertex, info *walkerVertex) {
 
 }
 
-func (w *Walker) waitDeps(
-	v Vertex,
-	deps map[Vertex]<-chan struct{},
+func (w *Walker[T]) waitDeps(
+	v Vertex[T],
+	deps map[Vertex[T]]<-chan struct{},
 	doneCh chan<- bool,
 	cancelCh <-chan struct{}) {
 
