@@ -6,10 +6,10 @@ import (
 )
 
 func TestGraphDot_empty(t *testing.T) {
-	var g Graph
-	g.Add(1)
-	g.Add(2)
-	g.Add(3)
+	var g Graph[myint]
+	g.Add(myint(1))
+	g.Add(myint(2))
+	g.Add(myint(3))
 
 	actual := strings.TrimSpace(string(g.Dot(nil)))
 	expected := strings.TrimSpace(testGraphDotEmptyStr)
@@ -19,11 +19,11 @@ func TestGraphDot_empty(t *testing.T) {
 }
 
 func TestGraphDot_basic(t *testing.T) {
-	var g Graph
-	g.Add(1)
-	g.Add(2)
-	g.Add(3)
-	g.Connect(BasicEdge(1, 3))
+	var g Graph[myint]
+	g.Add(myint(1))
+	g.Add(myint(2))
+	g.Add(myint(3))
+	g.Connect(BasicEdge[myint](myint(1), myint(3)))
 
 	actual := strings.TrimSpace(string(g.Dot(nil)))
 	expected := strings.TrimSpace(testGraphDotBasicStr)
@@ -32,13 +32,18 @@ func TestGraphDot_basic(t *testing.T) {
 	}
 }
 
+type mystr string
+
+func (m mystr) Hashcode() string {
+	return string(m)
+}
 func TestGraphDot_quoted(t *testing.T) {
-	var g Graph
-	quoted := `name["with-quotes"]`
-	other := `other`
+	var g Graph[mystr]
+	quoted := mystr(`name["with-quotes"]`)
+	other := mystr(`other`)
 	g.Add(quoted)
 	g.Add(other)
-	g.Connect(BasicEdge(quoted, other))
+	g.Connect(BasicEdge[mystr](quoted, other))
 
 	actual := strings.TrimSpace(string(g.Dot(nil)))
 	expected := strings.TrimSpace(testGraphDotQuotedStr)
@@ -48,7 +53,7 @@ func TestGraphDot_quoted(t *testing.T) {
 }
 
 func TestGraphDot_attrs(t *testing.T) {
-	var g Graph
+	var g Graph[*testGraphNodeDotter]
 	g.Add(&testGraphNodeDotter{
 		Result: &DotNode{
 			Name:  "foo",
@@ -64,6 +69,8 @@ func TestGraphDot_attrs(t *testing.T) {
 }
 
 type testGraphNodeDotter struct{ Result *DotNode }
+
+func (n *testGraphNodeDotter) Hashcode() string { return n.Result.Name }
 
 func (n *testGraphNodeDotter) Name() string                      { return n.Result.Name }
 func (n *testGraphNodeDotter) DotNode(string, *DotOpts) *DotNode { return n.Result }

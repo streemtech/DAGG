@@ -5,21 +5,25 @@ import (
 )
 
 func TestBasicEdgeHashcode(t *testing.T) {
-	e1 := BasicEdge(1, 2)
-	e2 := BasicEdge(1, 2)
+	e1 := BasicEdge[myint](myint(1), myint(2))
+	e2 := BasicEdge[myint](myint(1), myint(2))
 	if e1.Hashcode() != e2.Hashcode() {
 		t.Fatalf("bad")
 	}
 }
 
+type test struct {
+	Value string
+}
+
+func (t test) Hashcode() string {
+	return t.Value
+}
 func TestBasicEdgeHashcode_pointer(t *testing.T) {
-	type test struct {
-		Value string
-	}
 
 	v1, v2 := &test{"foo"}, &test{"bar"}
-	e1 := BasicEdge(v1, v2)
-	e2 := BasicEdge(v1, v2)
+	e1 := BasicEdge[test](v1, v2)
+	e2 := BasicEdge[test](v1, v2)
 	if e1.Hashcode() != e2.Hashcode() {
 		t.Fatalf("bad")
 	}
