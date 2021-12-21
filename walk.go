@@ -1,7 +1,6 @@
 package dag
 
 import (
-	"errors"
 	"log"
 	"sync"
 	"time"
@@ -50,16 +49,6 @@ type Walker struct {
 	// wait is done when all vertices have executed. It may become "undone"
 	// if new vertices are added.
 	wait sync.WaitGroup
-
-	// diagsMap contains the diagnostics recorded so far for execution,
-	// and upstreamFailed contains all the vertices whose problems were
-	// caused by upstream failures, and thus whose diagnostics should be
-	// excluded from the final set.
-	//
-	// Readers and writers of either map must hold diagsLock.
-	diagsMap       map[Vertex]Diagnostics
-	upstreamFailed map[Vertex]struct{}
-	diagsLock      sync.Mutex
 }
 
 func (w *Walker) init() {
@@ -111,23 +100,11 @@ type walkerVertex struct {
 // Wait will return as soon as all currently known vertices are complete.
 // If you plan on calling Update with more vertices in the future, you
 // should not call Wait until after this is done.
-func (w *Walker) Wait() Diagnostics {
+func (w *Walker) Wait() {
 	// Wait for completion
 	w.wait.Wait()
 
-	var diags Diagnostics
-	w.diagsLock.Lock()
-	for v, vDiags := range w.diagsMap {
-		if _, upstream := w.upstreamFailed[v]; upstream {
-			// Ignore diagnostics for nodes that had failed upstreams, since
-			// the downstream diagnostics are likely to be redundant.
-			continue
-		}
-		diags = diags.Append(vDiags)
-	}
-	w.diagsLock.Unlock()
-
-	return diags
+	return
 }
 
 // Update updates the currently executing walk with the given graph.
@@ -324,7 +301,6 @@ func (w *Walker) walkVertex(v Vertex, info *walkerVertex) {
 
 	// Wait for our dependencies. We create a [closed] deps channel so
 	// that we can immediately fall through to load our actual DepsCh.
-	var depsSuccess bool
 	var depsUpdateCh chan struct{}
 	depsCh := make(chan bool, 1)
 	depsCh <- true
@@ -335,7 +311,7 @@ func (w *Walker) walkVertex(v Vertex, info *walkerVertex) {
 			// Cancel
 			return
 
-		case depsSuccess = <-depsCh:
+		case <-depsCh:
 			// Deps complete! Mark as nil to trigger completion handling.
 			depsCh = nil
 
@@ -372,34 +348,6 @@ func (w *Walker) walkVertex(v Vertex, info *walkerVertex) {
 	default:
 	}
 
-	// Run our callback or note that our upstream failed
-	var diags Diagnostics
-	var upstreamFailed bool
-	if depsSuccess {
-		diags = w.Callback(v)
-	} else {
-		log.Printf("[TRACE] dag/walk: upstream of %q errored, so skipping", VertexName(v))
-		// This won't be displayed to the user because we'll set upstreamFailed,
-		// but we need to ensure there's at least one error in here so that
-		// the failures will cascade downstream.
-		diags = diags.Append(errors.New("upstream dependencies failed"))
-		upstreamFailed = true
-	}
-
-	// Record the result (we must do this after execution because we mustn't
-	// hold diagsLock while visiting a vertex.)
-	w.diagsLock.Lock()
-	if w.diagsMap == nil {
-		w.diagsMap = make(map[Vertex]Diagnostics)
-	}
-	w.diagsMap[v] = diags
-	if w.upstreamFailed == nil {
-		w.upstreamFailed = make(map[Vertex]struct{})
-	}
-	if upstreamFailed {
-		w.upstreamFailed[v] = struct{}{}
-	}
-	w.diagsLock.Unlock()
 }
 
 func (w *Walker) waitDeps(
@@ -427,17 +375,6 @@ func (w *Walker) waitDeps(
 				log.Printf("[TRACE] dag/walk: vertex %q is waiting for %q",
 					VertexName(v), VertexName(dep))
 			}
-		}
-	}
-
-	// Dependencies satisfied! We need to check if any errored
-	w.diagsLock.Lock()
-	defer w.diagsLock.Unlock()
-	for dep := range deps {
-		if w.diagsMap[dep].HasErrors() {
-			// One of our dependencies failed, so return false
-			doneCh <- false
-			return
 		}
 	}
 
