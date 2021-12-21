@@ -7,11 +7,11 @@ import (
 )
 
 func TestGraphStronglyConnected(t *testing.T) {
-	var g Graph
-	g.Add(1)
-	g.Add(2)
-	g.Connect(BasicEdge(1, 2))
-	g.Connect(BasicEdge(2, 1))
+	var g Graph[myint]
+	g.Add(myint(1))
+	g.Add(myint(2))
+	g.Connect(BasicEdge[myint](myint(1), myint(2)))
+	g.Connect(BasicEdge[myint](myint(2), myint(1)))
 
 	actual := strings.TrimSpace(testSCCStr(StronglyConnected(&g)))
 	expected := strings.TrimSpace(testGraphStronglyConnectedStr)
@@ -21,12 +21,12 @@ func TestGraphStronglyConnected(t *testing.T) {
 }
 
 func TestGraphStronglyConnected_two(t *testing.T) {
-	var g Graph
-	g.Add(1)
-	g.Add(2)
-	g.Connect(BasicEdge(1, 2))
-	g.Connect(BasicEdge(2, 1))
-	g.Add(3)
+	var g Graph[myint]
+	g.Add(myint(1))
+	g.Add(myint(2))
+	g.Connect(BasicEdge[myint](myint(1), myint(2)))
+	g.Connect(BasicEdge[myint](myint(2), myint(1)))
+	g.Add(myint(3))
 
 	actual := strings.TrimSpace(testSCCStr(StronglyConnected(&g)))
 	expected := strings.TrimSpace(testGraphStronglyConnectedTwoStr)
@@ -36,18 +36,18 @@ func TestGraphStronglyConnected_two(t *testing.T) {
 }
 
 func TestGraphStronglyConnected_three(t *testing.T) {
-	var g Graph
-	g.Add(1)
-	g.Add(2)
-	g.Connect(BasicEdge(1, 2))
-	g.Connect(BasicEdge(2, 1))
-	g.Add(3)
-	g.Add(4)
-	g.Add(5)
-	g.Add(6)
-	g.Connect(BasicEdge(4, 5))
-	g.Connect(BasicEdge(5, 6))
-	g.Connect(BasicEdge(6, 4))
+	var g Graph[myint]
+	g.Add(myint(1))
+	g.Add(myint(2))
+	g.Connect(BasicEdge[myint](myint(1), myint(2)))
+	g.Connect(BasicEdge[myint](myint(2), myint(1)))
+	g.Add(myint(3))
+	g.Add(myint(4))
+	g.Add(myint(5))
+	g.Add(myint(6))
+	g.Connect(BasicEdge[myint](myint(4), myint(5)))
+	g.Connect(BasicEdge[myint](myint(5), myint(6)))
+	g.Connect(BasicEdge[myint](myint(6), myint(4)))
 
 	actual := strings.TrimSpace(testSCCStr(StronglyConnected(&g)))
 	expected := strings.TrimSpace(testGraphStronglyConnectedThreeStr)
@@ -56,7 +56,7 @@ func TestGraphStronglyConnected_three(t *testing.T) {
 	}
 }
 
-func testSCCStr(list [][]Vertex) string {
+func testSCCStr[T Hashable](list [][]Vertex[T]) string {
 	var lines []string
 	for _, vs := range list {
 		result := make([]string, len(vs))

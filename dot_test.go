@@ -7,7 +7,7 @@ import (
 
 func TestGraphDot_opts(t *testing.T) {
 	var v testDotVertex
-	var g Graph
+	var g Graph[*testDotVertex]
 	g.Add(&v)
 
 	opts := &DotOpts{MaxDepth: 42}
@@ -29,6 +29,10 @@ type testDotVertex struct {
 	DotNodeTitle  string
 	DotNodeOpts   *DotOpts
 	DotNodeReturn *DotNode
+}
+
+func (v *testDotVertex) Hashcode() string {
+	return ""
 }
 
 func (v *testDotVertex) DotNode(title string, opts *DotOpts) *DotNode {
