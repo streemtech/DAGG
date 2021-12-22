@@ -23,9 +23,9 @@ func TestAcyclicGraphRoot(t *testing.T) {
 	g.Connect(BasicEdge(myint(3), myint(2)))
 	g.Connect(BasicEdge(myint(3), myint(1)))
 
-	if root, err := g.Root(); err != nil {
+	if root, err := g.Roots(); err != nil {
 		t.Fatalf("err: %s", err)
-	} else if root != myint(3) {
+	} else if root[0] != myint(3) {
 		t.Fatalf("bad: %#v", root)
 	}
 }
@@ -39,7 +39,7 @@ func TestAcyclicGraphRoot_cycle(t *testing.T) {
 	g.Connect(BasicEdge(myint(2), myint(3)))
 	g.Connect(BasicEdge(myint(3), myint(1)))
 
-	if _, err := g.Root(); err == nil {
+	if _, err := g.Roots(); err == nil {
 		t.Fatal("should error")
 	}
 }
@@ -51,8 +51,8 @@ func TestAcyclicGraphRoot_multiple(t *testing.T) {
 	g.Add(myint(3))
 	g.Connect(BasicEdge(myint(3), myint(2)))
 
-	if _, err := g.Root(); err == nil {
-		t.Fatal("should error")
+	if _, err := g.Roots(); err != nil {
+		t.Fatal("should NOT error for multiple roots.")
 	}
 }
 

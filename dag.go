@@ -56,29 +56,21 @@ func (g *AcyclicGraph[T]) Descendents(v T) (Set[T], error) {
 	return s, nil
 }
 
-// Root returns the root of the DAG, or an error.
+// Roots returns the root of the DAG, or an error.
 //
 // Complexity: O(V)
-func (g *AcyclicGraph[T]) Root() (T, error) {
+func (g *AcyclicGraph[T]) Roots() ([]T, error) {
 	roots := make([]T, 0, 1)
 	for _, v := range g.Vertices() {
 		if g.upEdgesNoCopy(v).Len() == 0 {
 			roots = append(roots, v)
 		}
 	}
-
-	if len(roots) > 1 {
-		// TODO(mitchellh): make this error message a lot better
-		var new T
-		return new, fmt.Errorf("multiple roots: %#v", roots)
-	}
-
 	if len(roots) == 0 {
-		var new T
-		return new, fmt.Errorf("no roots found")
+		return []T{}, fmt.Errorf("no roots found")
 	}
 
-	return roots[0], nil
+	return roots, nil
 }
 
 // TransitiveReduction performs the transitive reduction of graph g in place.
@@ -113,10 +105,10 @@ func (g *AcyclicGraph[T]) TransitiveReduction() {
 	}
 }
 
-// Validate validates the DAG. A DAG is valid if it has a single root
-// with no cycles.
+// Validate validates the DAG. A DAG is valid if it has at least one root
+// and no cycles.
 func (g *AcyclicGraph[T]) Validate() error {
-	if _, err := g.Root(); err != nil {
+	if _, err := g.Roots(); err != nil {
 		return err
 	}
 
