@@ -25,8 +25,9 @@ func (g *AcyclicGraph[T]) DirectedGraph() Grapher {
 }
 
 // Returns a Set that includes every Vertex yielded by walking down from the
-// provided starting Vertex v.
-func (g *AcyclicGraph[T]) Ancestors(v T) (Set[T], error) {
+// provided starting Vertex v. Descendents will NOT include root vertexes that can be reached
+// by walking up from v.
+func (g *AcyclicGraph[T]) Descendents(v T) (Set[T], error) {
 	s := make(Set[T])
 	memoFunc := func(v T, d int) error {
 		s.Add(v)
@@ -41,8 +42,9 @@ func (g *AcyclicGraph[T]) Ancestors(v T) (Set[T], error) {
 }
 
 // Returns a Set that includes every Vertex yielded by walking up from the
-// provided starting Vertex v.
-func (g *AcyclicGraph[T]) Descendents(v T) (Set[T], error) {
+// provided starting Vertex v. Ancestors will include all root vertexes that can be reached
+// by walking up from v.
+func (g *AcyclicGraph[T]) Ancestors(v T) (Set[T], error) {
 	s := make(Set[T])
 	memoFunc := func(v T, d int) error {
 		s.Add(v)
